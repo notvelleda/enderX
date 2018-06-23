@@ -306,16 +306,18 @@ public class PlatinumDesktop implements Desktop {
                         win.setClosable(false);
                         win.setRollable(false);
                         Label widthLabel = new Label("Width:");
-                        widthLabel.setLocation(4, 8);
+                        widthLabel.setLocation(4, 10);
                         win.add(widthLabel);
                         final Textbox widthTextbox = new Textbox();
                         widthTextbox.setLocation(48, 2);
+                        widthTextbox.setString("" + ((int) EnderX.getScreenSize().getWidth()));
                         win.add(widthTextbox);
                         Label heightLabel = new Label("Height:");
-                        heightLabel.setLocation(4, 36);
+                        heightLabel.setLocation(4, 38);
                         win.add(heightLabel);
                         final Textbox heightTextbox = new Textbox();
                         heightTextbox.setLocation(48, 30);
+                        heightTextbox.setString("" + ((int) EnderX.getScreenSize().getHeight()));
                         win.add(heightTextbox);
                         Button button = new Button("OK") {
                             @Override

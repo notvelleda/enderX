@@ -4,6 +4,10 @@ Apple Platinum recreated in Java, with a built-in X server!
 ## Requirements
 Anything that can run Java is supported.
 
+## Download
+I'm not supplying downloads yet because this project is in the early stages of development.
+If you want to try it out for yourself, you gotta build it. It's not hard.
+
 ## Building
 You need Maven to build this project. That's it.
 

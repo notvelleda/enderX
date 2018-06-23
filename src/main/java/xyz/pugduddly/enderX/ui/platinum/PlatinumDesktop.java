@@ -294,8 +294,65 @@ public class PlatinumDesktop implements Desktop {
                 win.add(resolutionLabel);
                 
                 win.add(this.createResolutionButton(640, 480, 16, 64));
-                win.add(this.createResolutionButton(800, 600, 96, 64));
-                win.add(this.createResolutionButton(1024, 768, 176, 64));
+                win.add(this.createResolutionButton(800, 600, 88, 64));
+                win.add(this.createResolutionButton(1024, 768, 160, 64));
+                
+                Button customResolutionButton = new Button("Custom") {
+                    @Override
+                    public void actionPerformed() {
+                        final Window win = new Window("Set Custom Resolution");
+                        win.setSize(new Dimension(368, 112));
+                        win.setResizable(false);
+                        win.setClosable(false);
+                        win.setRollable(false);
+                        Label widthLabel = new Label("Width:");
+                        widthLabel.setLocation(4, 8);
+                        win.add(widthLabel);
+                        final Textbox widthTextbox = new Textbox();
+                        widthTextbox.setLocation(48, 2);
+                        win.add(widthTextbox);
+                        Label heightLabel = new Label("Height:");
+                        heightLabel.setLocation(4, 36);
+                        win.add(heightLabel);
+                        final Textbox heightTextbox = new Textbox();
+                        heightTextbox.setLocation(48, 30);
+                        win.add(heightTextbox);
+                        Button button = new Button("OK") {
+                            @Override
+                            public void actionPerformed() {
+                                int width, height;
+                                try {
+                                    width = Math.max(Integer.parseInt(widthTextbox.getString()), 512);
+                                } catch (NumberFormatException e) {
+                                    EnderX.alert("Width is not a number!");
+                                    return;
+                                }
+                                try {
+                                    height = Math.max(Integer.parseInt(heightTextbox.getString()), 342);
+                                } catch (NumberFormatException e) {
+                                    EnderX.alert("Height is not a number!");
+                                    return;
+                                }
+                                EnderX.setScreenSize(new Dimension(width, height));
+                                win.close();
+                            }
+                        };
+                        button.setLocation(368 - 69, 112 - 30);
+                        button.setDefault(true);
+                        win.add(button);
+                        Button button2 = new Button("Cancel") {
+                            @Override
+                            public void actionPerformed() {
+                                win.close();
+                            }
+                        };
+                        button2.setLocation(368 - 147, 112 - 30);
+                        win.add(button2);
+                        win.setVisible(true);
+                    }
+                };
+                customResolutionButton.setLocation(239, 64);
+                win.add(customResolutionButton);
                 
                 Label scaleLabel = new Label("2x upscaling (useful for HiDPI displays)");
                 scaleLabel.setLocation(16, 96);

@@ -657,6 +657,8 @@ public class PlatinumDesktop implements Desktop {
                         win.setSize(win.getOriginalSize());
                         win.setPosition(win.getOriginalPosition());
                         win.onResize();
+                        for (ComponentListener l : win.getComponentListeners())
+                            l.componentResized(new ComponentEvent(EnderX.getComponent(), ComponentEvent.COMPONENT_RESIZED));
                     } else {
                         win.setMaximized(true);
                         win.setOriginalSize(win.getSize());
@@ -664,6 +666,8 @@ public class PlatinumDesktop implements Desktop {
                         win.setSize(new Dimension(this.scrWidth - 45, this.scrHeight - 60));
                         win.setPosition(new Point(15, 20));
                         win.onResize();
+                        for (ComponentListener l : win.getComponentListeners())
+                            l.componentResized(new ComponentEvent(EnderX.getComponent(), ComponentEvent.COMPONENT_RESIZED));
                     }
                 }
             } else {
@@ -1230,14 +1234,19 @@ public class PlatinumDesktop implements Desktop {
         Window top = this.getWindowManager().getTopWindow();
         if (top != null && top.isDragging() && !this.rootWindowFocused) {
             top.setDragging(false);
-            if (this.dragPoint != null)
+            if (this.dragPoint != null) {
                 top.setPosition(new Point((int) this.dragPoint.getX(), (int) Math.max(this.dragPoint.getY(), 20)));
+                for (ComponentListener l : top.getComponentListeners())
+                    l.componentResized(new ComponentEvent(EnderX.getComponent(), ComponentEvent.COMPONENT_MOVED));
+            }
         }
         if (top != null && top.isResizing() && !this.rootWindowFocused) {
             top.setResizing(false);
             if (this.resize != null) {
                 top.setSize(this.resize);
                 top.onResize();
+                for (ComponentListener l : top.getComponentListeners())
+                    l.componentResized(new ComponentEvent(EnderX.getComponent(), ComponentEvent.COMPONENT_RESIZED));
             }
         }
         if (top != null && !this.rootWindowFocused) {
@@ -1367,8 +1376,6 @@ public class PlatinumDesktop implements Desktop {
                     Dimension newdim = new Dimension((int) (this.resize.getWidth() + mouse.getX() - origin.getX()), (int) (this.resize.getHeight() + mouse.getY() - origin.getY()));
                     this.resize = newdim;
                     win.setResizeOrigin(mouse);
-                    for (ComponentListener l : win.getComponentListeners())
-                        l.componentResized(new ComponentEvent(EnderX.getComponent(), ComponentEvent.COMPONENT_RESIZED));
                 }
                 
                 if (win != null) {

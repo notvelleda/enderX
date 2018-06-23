@@ -44,11 +44,11 @@ public class Textbox extends Component implements KeyListener, MouseListener {
         if (resize) {
             g.drawString(text, (int) d.getWidth() - 4 - stringWidth, (int) (d.getHeight() / 2 - stringHeight / 1.6) + stringHeight);
             if (this.hasFocus() && System.currentTimeMillis() % 1000 < 500)
-                g.drawLine((int) d.getWidth() - 4, 3, (int) d.getWidth() - 4, (int) d.getHeight() - 3);
+                g.drawLine((int) d.getWidth() - 4, 3, (int) d.getWidth() - 4, (int) d.getHeight() - 4);
         } else {
             g.drawString(text, 4, (int) (d.getHeight() / 2 - stringHeight / 1.6) + stringHeight);
             if (this.hasFocus() && System.currentTimeMillis() % 1000 < 500)
-                g.drawLine(stringWidth + 4, 3, stringWidth + 4, (int) d.getHeight() - 3);
+                g.drawLine(stringWidth + 4, 3, stringWidth + 4, (int) d.getHeight() - 4);
         }
     }
     

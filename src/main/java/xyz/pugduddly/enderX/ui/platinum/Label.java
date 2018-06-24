@@ -4,12 +4,19 @@ import java.awt.*;
 
 import xyz.pugduddly.enderX.EnderX;
 
+/**
+ * Text label component.
+ */
 public class Label extends Component {
     private String string;
     private boolean centerText = false;
     private boolean isBold = false;
     private boolean shouldSetSize = true;
     
+    /**
+     * Create a new Label instance.
+     * @param string The text to be displayed
+     */
     public Label(String string) {
         this.setString(string);
         //this.setFont(EnderX.getFont("ScratchySans", 16));
@@ -17,6 +24,10 @@ public class Label extends Component {
         this.setForeground(Color.BLACK);
     }
     
+    /**
+     * Paints the component.
+     * @param g The Graphics instance to paint this component on.
+     */
     public void paint(Graphics g) {
         String text = this.getString();
         int stringWidth = g.getFontMetrics().stringWidth(text);
@@ -36,18 +47,32 @@ public class Label extends Component {
         }
     }
     
+    /**
+     * Gets the current String to be drawn.
+     * @return the string.
+     */
     public String getString() {
         return this.string;
     }
     
+    /**
+     * Set the String to be drawn.
+     * @param string The string.
+     */
     public void setString(String string) {
         this.string = string;
     }
     
+    /**
+     * Specify whether the text should be centered.
+     */
     public void centerText(boolean center) {
         this.centerText = center;
     }
     
+    /**
+     * Specify whether the text should be bold.
+     */
     public void setBold(boolean bold) {
         this.isBold = bold;
     }

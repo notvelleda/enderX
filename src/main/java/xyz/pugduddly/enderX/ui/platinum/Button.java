@@ -14,6 +14,9 @@ import java.awt.image.BufferedImage;
 import xyz.pugduddly.enderX.EnderX;
 import xyz.pugduddly.enderX.ui.Component;
 
+/**
+ * Standard Mac OS 9-like Button.
+ */
 public class Button extends Component implements KeyListener, MouseListener {
     private String string = "";
     private int width = -1;
@@ -43,6 +46,10 @@ public class Button extends Component implements KeyListener, MouseListener {
         };
     }
     
+    /**
+     * Creates a new Button instance.
+     * @param string The string to draw on the button.
+     */
     public Button(String string) {
         this.setFont(EnderX.getFont("Charcoal", 12));
         this.setForeground(Color.BLACK);
@@ -52,6 +59,10 @@ public class Button extends Component implements KeyListener, MouseListener {
         this.setForeground(Color.BLACK);
     }
     
+    /**
+     * Paints the component.
+     * @param g The Graphics instance to paint this component on.
+     */
     public void paint(Graphics g) {
         if (this.width == -1) {
             this.width = Math.max(10 + g.getFontMetrics().stringWidth(this.string) + 10, 60);
@@ -84,10 +95,18 @@ public class Button extends Component implements KeyListener, MouseListener {
             g.drawString(this.string, this.width / 2 - stringWidth / 2, 14);
     }
     
+    /**
+     * Gets the current String to be drawn.
+     * @return the string.
+     */
     public String getString() {
         return this.string;
     }
     
+    /**
+     * Set the String to be drawn.
+     * @param string The string.
+     */
     public void setString(String string) {
         this.string = string;
         this.width = -1;
@@ -125,9 +144,15 @@ public class Button extends Component implements KeyListener, MouseListener {
             this.mouseClicked(null);
     }
     
+    /**
+     * Sets whether this button is the default button for the window.
+     */
     public void setDefault(boolean isDefault) {
         this.isDefault = isDefault;
     }
     
+    /**
+     * Called when the button is pressed.
+     */
     public void actionPerformed() {}
 }

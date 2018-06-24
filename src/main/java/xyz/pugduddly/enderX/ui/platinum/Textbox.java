@@ -13,9 +13,15 @@ import java.awt.event.MouseListener;
 import xyz.pugduddly.enderX.EnderX;
 import xyz.pugduddly.enderX.ui.Component;
 
+/**
+ * Simple textbox component.
+ */
 public class Textbox extends Component implements KeyListener, MouseListener {
     private String string = "";
     
+    /**
+     * Creates a new Textbox instance.
+     */
     public Textbox() {
         //this.setFont(EnderX.getFont("Geneva", 12));
         this.setFont(EnderX.getFont("px_sans_nouveaux", 8));
@@ -25,6 +31,10 @@ public class Textbox extends Component implements KeyListener, MouseListener {
         this.setPreferredSize(new Dimension(158, 24));
     }
     
+    /**
+     * Paints the component.
+     * @param g The Graphics instance to paint this component on.
+     */
     public void paint(Graphics g) {
         Dimension d = this.getPreferredSize();
         g.setColor(Color.BLACK);
@@ -52,10 +62,18 @@ public class Textbox extends Component implements KeyListener, MouseListener {
         }
     }
     
+    /**
+     * Gets the current String to be drawn.
+     * @return the string.
+     */
     public String getString() {
         return this.string;
     }
     
+    /**
+     * Set the String to be drawn.
+     * @param string The string.
+     */
     public void setString(String string) {
         this.string = string;
     }

@@ -84,6 +84,10 @@ public class EnderX {
         frame.setVisible(true);
 	}
     
+    /**
+     * Get the directory that all enderX-related files should be stored in.
+     * @return the directory that all enderX-related files should be stored in.
+     */
     public static File getHomeDirectory() {
         if (homeDirectory == null) {
             String string = "enderX";
@@ -139,14 +143,37 @@ public class EnderX {
         return "other";
     }
     
+    /**
+     * Get a loaded Font.
+     * @param name The name of the font.
+     * @param size The size of the font.
+     * @return the Font object.
+     * @see java.awt.Font
+     */
     public static Font getFont(String name, int size) {
         return fonts.get(name.toLowerCase() + "#" + size);
     }
     
+    /**
+     * Add a font to the table of loaded fonts.
+     * @param name The name of the font.
+     * @param size The size of the font.
+     * @param font The font object.
+     * @return the Font object, for convenience.
+     * @see java.awt.Font
+     */
     public static Font addFont(String name, int size, Font font) {
         return fonts.put(name.toLowerCase() + "#" + size, font);
     }
     
+    /**
+     * Load a font, and then add it to the table of loaded fonts.
+     * @param is The InputStream pointing to the font.
+     * @param name The name of the font.
+     * @param size The size of the font.
+     * @return the loaded Font object, for convenience
+     * @see java.awt.Font java.io.InputStream
+     */
     public static Font loadFont(InputStream is, String name, int size) {
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT, is).deriveFont((float) size);
@@ -158,6 +185,10 @@ public class EnderX {
         }
     }
     
+    /**
+     * Load all built-in fonts.
+     * This method is called automatically on startup.
+     */
     public static void loadBuiltinFonts() {
         System.out.println("Loading fonts...");
         List<String> classNames = new ArrayList<String>();
@@ -182,6 +213,11 @@ public class EnderX {
         System.out.println("Done");
     }
     
+    /**
+     * Convenience method to load a BufferedImage from a Base64 string.
+     * @return the loaded image, or `null` if unsuccessful.
+     * @see java.awt.image.BufferedImage
+     */
     public static BufferedImage loadBase64Image(String string) {
         try {
             return javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(javax.xml.bind.DatatypeConverter.parseBase64Binary(string)));
@@ -190,6 +226,11 @@ public class EnderX {
         }
     }
     
+    /**
+     * Convenience method to load a BufferedImage from an InputStream.
+     * @return the loaded image, or `null` if unsuccessful.
+     * @see java.io.InputStream java.awt.image.BufferedImage
+     */
     public static BufferedImage loadImage(InputStream is) {
         try {
             return javax.imageio.ImageIO.read(is);
@@ -198,6 +239,11 @@ public class EnderX {
         }
     }
     
+    /**
+     * Convenience method to load a BufferedImage from a URL.
+     * @return the loaded image, or `null` if unsuccessful.
+     * @see java.net.URL java.awt.image.BufferedImage
+     */
     public static BufferedImage loadImage(URL uRL) {
         try {
             return javax.imageio.ImageIO.read(uRL);
@@ -206,6 +252,10 @@ public class EnderX {
         }
     }
     
+    /**
+     * Load and run an enderX-compatible application.
+     * @param file The file pointing to the application to be run.
+     */
     public static void runApp(File file) {
         String mainClass = "";
         try {
@@ -278,6 +328,10 @@ public class EnderX {
         return classNames;
     }
     
+    /**
+     * Alert the user.
+     * @param string The text to show.
+     */
     public static void alert(String string) {
         final Window win = new Window("Alert");
         win.setSize(new Dimension(368, 112));
@@ -299,18 +353,38 @@ public class EnderX {
         win.setVisible(true);
     }
     
+    /**
+     * Gets the current Desktop.
+     * @return the current Desktop.
+     * @see xyz.pugduddly.enderX.ui.Desktop
+     */
     public static Desktop getDesktop() {
         return component.desktop;
     }
     
+    /**
+     * Gets the Component that enderX is displayed in.
+     * @return the Component that enderX is displayed in.
+     * @see java.awt.Component
+     */
     public static Component getComponent() {
         return (Component) component;
     }
     
+    /**
+     * Gets the Container that enderX is displayed in.
+     * @return the Container that enderX is displayed in.
+     * @see java.awt.Container
+     */
     public static Container getContainer() {
         return (Container) frame;
     }
     
+    /**
+     * Sets the current screen size.
+     * @param size The new screen size.
+     * @see java.awt.Dimension
+     */
     public static void setScreenSize(Dimension size) {
         frame.setSize(size);
         component.setSize(size);
@@ -325,6 +399,11 @@ public class EnderX {
         screenSize = size;
     }
     
+    /**
+     * Gets the current screen size.
+     * @return the current screen size.
+     * @see java.awt.Dimension
+     */
     public static Dimension getScreenSize() {
         //return component.getPreferredSize();
         return screenSize;

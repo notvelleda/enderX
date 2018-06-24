@@ -134,7 +134,7 @@ public class PFM {
             }
         
         if (fullUpdate) {
-            window.getComponents().clear();
+            window.removeAll();
             Dimension size = window.getSize();
             
             Beveled b = new Beveled();

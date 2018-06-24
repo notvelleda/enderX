@@ -2,7 +2,14 @@ package xyz.pugduddly.enderX.ui.platinum;
 
 import java.awt.*;
 
+/**
+ * Simple reverse beveled component.
+ */
 public class UnBeveled extends Component {
+    /**
+     * Paints the component.
+     * @param g The Graphics instance to paint this component on.
+     */
     public void paint(Graphics g) {
         Dimension size = this.getPreferredSize();
         g.setClip(-2, -2, (int) size.getWidth() + 4, (int) size.getHeight() + 4);

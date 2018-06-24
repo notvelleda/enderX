@@ -2,7 +2,14 @@ package xyz.pugduddly.enderX.ui.platinum;
 
 import java.awt.*;
 
+/**
+ * Simple beveled component.
+ */
 public class Beveled extends Component {
+    /**
+     * Paints the component.
+     * @param g The Graphics instance to paint this component on.
+     */
     public void paint(Graphics g) {
         Dimension size = this.getPreferredSize();
         g.setClip(-1, -1, (int) size.getWidth() + 2, (int) size.getHeight() + 2);

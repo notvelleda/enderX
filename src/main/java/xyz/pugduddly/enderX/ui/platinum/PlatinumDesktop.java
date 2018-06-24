@@ -690,7 +690,7 @@ public class PlatinumDesktop implements Desktop {
         else
             g.drawImage(window[5], x + 5 + width, y, null);
         g.setColor(Color.BLACK);
-        g.drawString(title, x + 5 + width / 2 - titleWidth / 2 + 5, y + 14);
+        g.drawString(title, x + 5 + width / 2 - titleWidth / 2 + 5, y + 15);
         if (win.canClose()) {
             int buttonX = x + 4;
             int buttonY = y + 4;
@@ -783,7 +783,7 @@ public class PlatinumDesktop implements Desktop {
         else
             g.drawImage(windowInactive[2], x + width - 11, y, null);
         g.setColor(new Color(0x737373));
-        g.drawString(title, x + 5 + width / 2 - titleWidth / 2 + 5, y + 14);
+        g.drawString(title, x + 5 + width / 2 - titleWidth / 2 + 5, y + 15);
         if (win.isRolled()) return;
         g.drawImage(win.getCanvas(), x + 6, y + 22, null);
         g.drawImage(win.getComponentCanvas(), x + 6, y + 22, null);
@@ -934,7 +934,7 @@ public class PlatinumDesktop implements Desktop {
                             g.drawLine(x + 1, y, x + width - 2, y);
                         g.setColor(new Color(0x0a008c));
                         g.drawLine(x + width - 1, y, x + width - 1, y + 19);
-                        if (count == menu.getItems().size() - 1)
+                        if (count == menu.getItems().length - 1)
                             g.drawLine(x + 2, y + 19, x + width - 1, y + 19);
                         g.setColor(Color.WHITE);
                     }
@@ -1191,12 +1191,12 @@ public class PlatinumDesktop implements Desktop {
         this.isMousePressed = true;
         
         if (menuClick(mouse)) {
-            ArrayList<Window> windows = this.getWindowManager().getWindows();
+            Window[] windows = this.getWindowManager().getWindows();
             boolean hasFoundWindow = false;
             this.rootWindowFocused = true;
             // Iterate over windows in reverse
-            for (int i = windows.size() - 1; i >= 0; i --) {
-                Window window = windows.get(i);
+            for (int i = windows.length - 1; i >= 0; i --) {
+                Window window = windows[i];
                 if (!window.isVisible()) continue;
                 Point pos = window.getPosition();
                 Dimension size = window.getSize();

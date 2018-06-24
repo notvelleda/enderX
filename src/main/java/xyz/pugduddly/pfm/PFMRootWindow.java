@@ -283,7 +283,7 @@ public class PFMRootWindow extends Window {
             }
         
         if (fullUpdate) {
-            window.getComponents().clear();
+            window.removeAll();
             Dimension size = window.getSize();
             
             FileIcon hardDisk = new FileIcon(PFM.icons[2], EnderX.getHomeDirectory(), "Hard Disk") {

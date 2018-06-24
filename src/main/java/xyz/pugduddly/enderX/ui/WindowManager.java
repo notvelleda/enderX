@@ -30,15 +30,28 @@ import java.util.Random;
 
 import xyz.pugduddly.enderX.EnderX;
 
+/**
+ * Simple Window manager.
+ */
 public class WindowManager {
 	private ArrayList<Window> windows = new ArrayList<Window>();
     
+    /**
+     * Adds window.
+     * @param window The window to be added.
+     * @return the WindowManager object.
+     */
     public WindowManager addWindow(Window window) {
         this.windows.add(window);
         EnderX.getDesktop().newWindowAdded(window);
         return this;
     }
     
+    /**
+     * Removes window.
+     * @param window The window to be removed.
+     * @return the WindowManager object.
+     */
     public WindowManager removeWindow(Window window) {
         int index = this.getWindowIndex(window);
         if (index >= 0) {
@@ -47,6 +60,11 @@ public class WindowManager {
         return this;
     }
     
+    /**
+     * Moves window to the top.
+     * @param window The window to be moved to the top.
+     * @return the WindowManager object.
+     */
     public WindowManager moveToTop(Window window) {
         int index = this.getWindowIndex(window);
         if (index >= 0) {
@@ -56,10 +74,18 @@ public class WindowManager {
         return this;
     }
     
-    public ArrayList<Window> getWindows() {
-        return this.windows;
+    /**
+     * Gets the array of Windows added to the WindowManager.
+     * @return the array of Windows.
+     */
+    public Window[] getWindows() {
+        return this.windows.toArray(new Window[this.windows.size()]);
     }
     
+    /**
+     * Gets the Window that is set to be on top.
+     * @return the Window that is on top.
+     */
     public Window getTopWindow() {
         if (this.windows.size() > 0)
             for (int i = this.windows.size() - 1; i >= 0; i --) {
@@ -70,10 +96,19 @@ public class WindowManager {
         return null;
     }
     
+    /**
+     * Get the index of a Window in the array.
+     * @return the index.
+     */
     public int getWindowIndex(Window window) {
         return this.windows.indexOf(window);
     }
     
+    /**
+     * Get whether a Window is on top.
+     * @param window The window.
+     * @return whether the Window is on top.
+     */
     public boolean isWindowOnTop(Window window) {
         if (!window.isVisible()) return false;
         int index = getWindowIndex(window);

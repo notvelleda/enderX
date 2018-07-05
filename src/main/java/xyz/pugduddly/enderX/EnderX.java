@@ -280,7 +280,18 @@ public class EnderX {
             Thread.currentThread().setContextClassLoader(loader);
             List<String> classes = getJarClasses(file.getPath());
             for (int j = 0; j < classes.size(); j ++) {
-                Class c = loader.loadClass(classes.get(j));
+                Class c;
+                try {
+                    c = loader.loadClass(classes.get(j));
+                } catch (Exception e) {
+                    System.out.println("Exception while loading class!");
+                    e.printStackTrace();
+                    continue;
+                } catch (Error e) {
+                    System.out.println("Exception while loading class!");
+                    e.printStackTrace();
+                    continue;
+                }
                 //System.out.println("Loaded class " + c.getName());
                 if (c.getName().equals(mainClass)) {
                     try {

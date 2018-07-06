@@ -44,20 +44,38 @@ public class Textbox extends Component implements KeyListener, MouseListener {
         g.setColor(Color.WHITE);
         g.fillRect(1, 1, (int) d.getWidth() - 2, (int) d.getHeight() - 2);
         g.setColor(this.getForeground());
+        
         String text = this.getString();
         int stringWidth = g.getFontMetrics().stringWidth(text);
         boolean resize = false;
+        int resizeLength = 0;
         while (stringWidth > d.getWidth() - 6) {
             resize = true;
             text = text.substring(1, text.length());
             stringWidth = g.getFontMetrics().stringWidth(text);
+            resizeLength ++;
         }
-        int cursorX = g.getFontMetrics().stringWidth(text);
+        int newCursorPos = this.cursorPos - resizeLength;
+        if (newCursorPos < 0) {
+            text = this.getString();
+            int offset = newCursorPos - 1;
+            while (resizeLength + offset < 0) offset ++;
+            text = text.substring(resizeLength + offset, text.length() + offset);
+            stringWidth = g.getFontMetrics().stringWidth(text);
+            resizeLength += offset;
+            newCursorPos = this.cursorPos - resizeLength;
+            resize = false;
+        }
+        int cursorX = g.getFontMetrics().stringWidth(text.substring(0, newCursorPos));
         int stringHeight = g.getFontMetrics().getHeight();
+        
         if (resize) {
             g.drawString(text, (int) d.getWidth() - 4 - stringWidth, (int) (d.getHeight() / 2 - stringHeight / 1.6) + stringHeight);
             if (this.hasFocus() && System.currentTimeMillis() % 1000 < 500)
-                g.drawLine((int) d.getWidth() - 4, 3, (int) d.getWidth() - 4, (int) d.getHeight() - 4);
+                if (this.cursorPos == text.length() - 1)
+                    g.drawLine((int) d.getWidth() - 4, 3, (int) d.getWidth() - 4, (int) d.getHeight() - 4);
+                else
+                    g.drawLine((int) d.getWidth() - stringWidth + cursorX - 4, 3, (int) d.getWidth() - stringWidth + cursorX - 4, (int) d.getHeight() - 4);
         } else {
             g.drawString(text, 4, (int) (d.getHeight() / 2 - stringHeight / 1.6) + stringHeight);
             if (this.hasFocus() && System.currentTimeMillis() % 1000 < 500)
@@ -79,6 +97,7 @@ public class Textbox extends Component implements KeyListener, MouseListener {
      */
     public void setString(String string) {
         this.stringBuilder = new StringBuilder(string);
+        this.cursorPos = string.length();
     }
     
     public void mousePressed(MouseEvent e) {}

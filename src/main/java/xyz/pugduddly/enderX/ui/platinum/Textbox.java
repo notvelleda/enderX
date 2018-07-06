@@ -17,7 +17,9 @@ import xyz.pugduddly.enderX.ui.Component;
  * Simple textbox component.
  */
 public class Textbox extends Component implements KeyListener, MouseListener {
-    private String string = "";
+    //private String string = "";
+    private StringBuilder stringBuilder = new StringBuilder();
+    private int cursorPos = 0;
     
     /**
      * Creates a new Textbox instance.
@@ -50,15 +52,17 @@ public class Textbox extends Component implements KeyListener, MouseListener {
             text = text.substring(1, text.length());
             stringWidth = g.getFontMetrics().stringWidth(text);
         }
+        int cursorX = g.getFontMetrics().stringWidth(text.substring(0, this.cursorPos));
         int stringHeight = g.getFontMetrics().getHeight();
         if (resize) {
             g.drawString(text, (int) d.getWidth() - 4 - stringWidth, (int) (d.getHeight() / 2 - stringHeight / 1.6) + stringHeight);
             if (this.hasFocus() && System.currentTimeMillis() % 1000 < 500)
-                g.drawLine((int) d.getWidth() - 4, 3, (int) d.getWidth() - 4, (int) d.getHeight() - 4);
+                g.drawLine(cursorX + 4, 3, cursorX + 4, (int) d.getHeight() - 4);
+                //g.drawLine((int) d.getWidth() - 4, 3, (int) d.getWidth() - 4, (int) d.getHeight() - 4);
         } else {
             g.drawString(text, 4, (int) (d.getHeight() / 2 - stringHeight / 1.6) + stringHeight);
             if (this.hasFocus() && System.currentTimeMillis() % 1000 < 500)
-                g.drawLine(stringWidth + 4, 3, stringWidth + 4, (int) d.getHeight() - 4);
+                g.drawLine(cursorX + 4, 3, cursorX + 4, (int) d.getHeight() - 4);
         }
     }
     
@@ -67,7 +71,7 @@ public class Textbox extends Component implements KeyListener, MouseListener {
      * @return the string.
      */
     public String getString() {
-        return this.string;
+        return this.stringBuilder.toString();
     }
     
     /**
@@ -75,7 +79,7 @@ public class Textbox extends Component implements KeyListener, MouseListener {
      * @param string The string.
      */
     public void setString(String string) {
-        this.string = string;
+        this.stringBuilder = new StringBuilder(string);
     }
     
     public void mousePressed(MouseEvent e) {}
@@ -88,18 +92,42 @@ public class Textbox extends Component implements KeyListener, MouseListener {
     public void mouseEntered(MouseEvent e) {}
     public void mouseExited(MouseEvent e) {}
     
-    public void keyPressed(KeyEvent e) {}
+    public void keyPressed(KeyEvent e) {
+        if (this.hasFocus()) {
+            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                if (this.cursorPos > 0) {
+                    this.cursorPos --;
+                } else {
+                    Toolkit.getDefaultToolkit().beep();
+                    this.cursorPos = 0;
+                }
+            }
+            if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                if (this.cursorPos < this.stringBuilder.length()) {
+                    this.cursorPos ++;
+                } else {
+                    Toolkit.getDefaultToolkit().beep();
+                    this.cursorPos = this.stringBuilder.length();
+                }
+            }
+        }
+    }
+    
     public void keyReleased(KeyEvent e) {}
     
     public void keyTyped(KeyEvent e) {
         if (this.hasFocus()) {
             char keyChar = e.getKeyChar();
-            if (keyChar == 8 && this.string.length() > 0)
-                this.string = this.string.substring(0, this.string.length() - 1);
-            else if (keyChar == 8)
+            if (keyChar == 8 && this.stringBuilder.length() > 0 && this.cursorPos > 0) {
+                this.stringBuilder.deleteCharAt(this.cursorPos - 1);
+                this.cursorPos --;
+            } else if (keyChar == 8) {
                 Toolkit.getDefaultToolkit().beep();
-            else if (keyChar >= 32)
-                this.string += keyChar;
+                this.cursorPos = 0;
+            } else if (keyChar >= 32) {
+                this.stringBuilder.insert(this.cursorPos, keyChar);
+                this.cursorPos ++;
+            }
         }
     }
 }

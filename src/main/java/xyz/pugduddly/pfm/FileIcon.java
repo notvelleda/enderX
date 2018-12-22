@@ -48,7 +48,7 @@ public class FileIcon extends Component implements MouseListener {
     public FileIcon(BufferedImage icon, File file, String name) {
         this.icon = icon;
         this.name = name;
-        this.setFont(EnderX.getFont("EspySans-Regular", 9));
+        this.setFont(EnderX.getFont("ScratchySans", 16));
         this.addMouseListener(this);
         this.file = file;
         this.selectedIcon = createImage(new FilteredImageSource(this.icon.getSource(), new DarkenFilter()));

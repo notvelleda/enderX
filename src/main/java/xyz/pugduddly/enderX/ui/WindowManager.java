@@ -25,6 +25,8 @@ package xyz.pugduddly.enderX.ui;
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.event.WindowListener;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -42,8 +44,22 @@ public class WindowManager {
      * @return the WindowManager object.
      */
     public WindowManager addWindow(Window window) {
+        Window oldTopWindow = this.getTopWindow();
         this.windows.add(window);
         EnderX.getDesktop().newWindowAdded(window);
+        Window newTopWindow = this.getTopWindow();
+        if (oldTopWindow != newTopWindow) {
+            if (oldTopWindow != null) {
+                oldTopWindow.removeFocus();
+                for (WindowListener l : oldTopWindow.getWindowListeners())
+                    l.windowDeactivated(new WindowEvent((java.awt.Window) EnderX.getContainer(), WindowEvent.WINDOW_DEACTIVATED));
+            }
+            if (newTopWindow != null) {
+                newTopWindow.addFocus();
+                for (WindowListener l : newTopWindow.getWindowListeners())
+                    l.windowActivated(new WindowEvent((java.awt.Window) EnderX.getContainer(), WindowEvent.WINDOW_ACTIVATED));
+            }
+        }
         return this;
     }
     
@@ -53,9 +69,23 @@ public class WindowManager {
      * @return the WindowManager object.
      */
     public WindowManager removeWindow(Window window) {
+        Window oldTopWindow = this.getTopWindow();
         int index = this.getWindowIndex(window);
         if (index >= 0) {
             this.windows.remove(index);
+        }
+        Window newTopWindow = this.getTopWindow();
+        if (oldTopWindow != newTopWindow) {
+            if (oldTopWindow != null) {
+                oldTopWindow.removeFocus();
+                for (WindowListener l : oldTopWindow.getWindowListeners())
+                    l.windowDeactivated(new WindowEvent((java.awt.Window) EnderX.getContainer(), WindowEvent.WINDOW_DEACTIVATED));
+            }
+            if (newTopWindow != null) {
+                newTopWindow.addFocus();
+                for (WindowListener l : newTopWindow.getWindowListeners())
+                    l.windowActivated(new WindowEvent((java.awt.Window) EnderX.getContainer(), WindowEvent.WINDOW_ACTIVATED));
+            }
         }
         return this;
     }
@@ -66,10 +96,24 @@ public class WindowManager {
      * @return the WindowManager object.
      */
     public WindowManager moveToTop(Window window) {
+        Window oldTopWindow = this.getTopWindow();
         int index = this.getWindowIndex(window);
         if (index >= 0) {
             this.windows.remove(index);
             this.windows.add(window);
+        }
+        Window newTopWindow = this.getTopWindow();
+        if (oldTopWindow != newTopWindow) {
+            if (oldTopWindow != null) {
+                oldTopWindow.removeFocus();
+                for (WindowListener l : oldTopWindow.getWindowListeners())
+                    l.windowDeactivated(new WindowEvent((java.awt.Window) EnderX.getContainer(), WindowEvent.WINDOW_DEACTIVATED));
+            }
+            if (newTopWindow != null) {
+                newTopWindow.addFocus();
+                for (WindowListener l : newTopWindow.getWindowListeners())
+                    l.windowActivated(new WindowEvent((java.awt.Window) EnderX.getContainer(), WindowEvent.WINDOW_ACTIVATED));
+            }
         }
         return this;
     }
@@ -90,7 +134,6 @@ public class WindowManager {
         if (this.windows.size() > 0)
             for (int i = this.windows.size() - 1; i >= 0; i --) {
                 if (!this.windows.get(i).isVisible()) continue;
-                
                 return this.windows.get(i);
             }
         return null;

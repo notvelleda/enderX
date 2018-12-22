@@ -57,6 +57,7 @@ public class Button extends Component implements KeyListener, MouseListener {
         this.addMouseListener(this);
         this.setString(string);
         this.setForeground(Color.BLACK);
+        this.setPreferredSize(new Dimension(60, 20));
     }
     
     /**

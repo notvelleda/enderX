@@ -31,38 +31,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Launcher {
-	private static final int MIN_HEAP = 511;
-    private static final int RECOMMENDED_HEAP = 1024;
+	private static final int MIN_HEAP = 1024;
+    private static final int RECOMMENDED_HEAP = 2048;
 
     public static void main(String[] args) throws Exception {
         float heapSizeMegs = Runtime.getRuntime().maxMemory() / 1024 / 1024;
-        if (heapSizeMegs > 511.0f) {
-            System.setProperty("sun.java2d.noddraw", "true");
-            System.setProperty("sun.java2d.d3d", "true");
-            System.setProperty("sun.java2d.opengl", "true");
-            System.setProperty("sun.java2d.ddscale", "true");
-            System.setProperty("sun.java2d.translaccel", "true");
-            System.setProperty("sun.java2d.pmoffscreen", "false");
+        if (heapSizeMegs > MIN_HEAP) {
+            System.setProperty("sun.java2d.noddraw", "True");
+            System.setProperty("sun.java2d.d3d", "True");
+            System.setProperty("sun.java2d.opengl", "True");
+            System.setProperty("sun.java2d.ddscale", "True");
+            System.setProperty("sun.java2d.translaccel", "True");
+            System.setProperty("sun.java2d.pmoffscreen", "False");
+            //System.setProperty("sun.java2d.trace", "log");
             EnderX.main(args);
         } else {
             try {
                 String pathToJar = Launcher.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
                 ArrayList<String> params = new ArrayList<String>();
-                params.add("javaw");
-                params.add("-Xmx1024m");
-                params.add("-Dsun.java2d.noddraw=true");
-                params.add("-Dsun.java2d.d3d=true");
-                params.add("-Dsun.java2d.opengl=true");
-                params.add("-Dsun.java2d.ddscale=true");
-                params.add("-Dsun.java2d.translaccel=true");
-                params.add("-Dsun.java2d.pmoffscreen=false");
+                params.add("java");
+                params.add("-Xmx" + RECOMMENDED_HEAP + "m");
+                params.add("-Dsun.java2d.noddraw=True");
+                params.add("-Dsun.java2d.d3d=True");
+                params.add("-Dsun.java2d.opengl=True");
+                params.add("-Dsun.java2d.ddscale=True");
+                params.add("-Dsun.java2d.translaccel=True");
+                params.add("-Dsun.java2d.pmoffscreen=False");
+                //params.add("-Dsun.java2d.trace=log");
                 params.add("-classpath");
                 params.add(pathToJar);
                 params.add("xyz.pugduddly.enderX.EnderX");
                 ProcessBuilder pb = new ProcessBuilder(params);
                 Process process = pb.start();
                 if (process == null) {
-                    throw new Exception("!");
+                    throw new Exception("process == null");
                 }
                 System.exit(0);
             }

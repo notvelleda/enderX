@@ -36,14 +36,19 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
+import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.net.URL;
-//import javax.swing.JFrame;
-import java.awt.Frame;
+
 import java.net.URL;
 import java.net.URLClassLoader;
+
 import java.lang.reflect.Method;
 
 import xyz.pugduddly.enderX.ui.Desktop;
@@ -60,6 +65,7 @@ public class EnderX {
     private static EnderXComponent component;
     private static Frame frame;
     private static Dimension screenSize;
+    private static BufferedImage screenBuffer;
     public static final String VERSION = "2.0-beta1";
     
 	public static void main(String args[]) {
@@ -214,14 +220,63 @@ public class EnderX {
     }
     
     /**
+     * Convenience method to attempt accelerating an image.
+     */
+    public static BufferedImage accelerateImage(Image i, int transparency) {
+        try {
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsConfiguration gc = ge.getDefaultScreenDevice().getDefaultConfiguration();
+            BufferedImage bi = gc.createCompatibleImage(i.getWidth(null), i.getHeight(null), transparency);
+            bi.setAccelerationPriority(1);
+            Graphics2D g = bi.createGraphics();
+            g.drawImage(i, 0, 0, null);
+            g.dispose();
+            i.flush();
+            return bi;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    private static BufferedImage toCompatibleImage(BufferedImage image) {
+        // obtain the current system graphical settings
+        GraphicsConfiguration gfxConfig = GraphicsEnvironment.
+            getLocalGraphicsEnvironment().getDefaultScreenDevice().
+            getDefaultConfiguration();
+
+        /*
+         * if image is already compatible and optimized for current system 
+         * settings, simply return it
+         */
+        if (image.getColorModel().equals(gfxConfig.getColorModel()))
+            return image;
+
+        // image is not optimized, so create a new image that is
+        BufferedImage newImage = gfxConfig.createCompatibleImage(
+                image.getWidth(), image.getHeight(), image.getTransparency());
+
+        // get the graphics context of the new image to draw the old image on
+        Graphics2D g2d = newImage.createGraphics();
+
+        // actually draw the image and dispose of context no longer needed
+        g2d.drawImage(image, 0, 0, null);
+        g2d.dispose();
+
+        // return the new optimized image
+        return newImage; 
+    }
+    
+    /**
      * Convenience method to load a BufferedImage from a Base64 string.
      * @return the loaded image, or `null` if unsuccessful.
      * @see java.awt.image.BufferedImage
      */
     public static BufferedImage loadBase64Image(String string) {
         try {
-            return javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(javax.xml.bind.DatatypeConverter.parseBase64Binary(string)));
+            return toCompatibleImage(javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(javax.xml.bind.DatatypeConverter.parseBase64Binary(string))));
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -233,8 +288,9 @@ public class EnderX {
      */
     public static BufferedImage loadImage(InputStream is) {
         try {
-            return javax.imageio.ImageIO.read(is);
+            return toCompatibleImage(javax.imageio.ImageIO.read(is));
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -246,8 +302,9 @@ public class EnderX {
      */
     public static BufferedImage loadImage(URL uRL) {
         try {
-            return javax.imageio.ImageIO.read(uRL);
+            return toCompatibleImage(javax.imageio.ImageIO.read(uRL));
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -296,7 +353,7 @@ public class EnderX {
                 if (c.getName().equals(mainClass)) {
                     try {
                         final Method main = c.getDeclaredMethod("main");
-                        new Thread() {
+                        new Thread(file.getName()) {
                             public void run() {
                                 try {
                                     main.invoke(null, new Object[] {});
@@ -397,15 +454,15 @@ public class EnderX {
      * @see java.awt.Dimension
      */
     public static void setScreenSize(Dimension size) {
-        frame.setSize(size);
-        component.setSize(size);
-        component.setPreferredSize(size);
+        component.setScreenSize(size);
         WeirdX.width = (short) size.getWidth();
         WeirdX.height = (short) size.getHeight();
         
         Desktop desktop = getDesktop();
         if (desktop != null)
             desktop.setScreenSize(size);
+        
+        frame.pack();
         
         screenSize = size;
     }
@@ -416,7 +473,7 @@ public class EnderX {
      * @see java.awt.Dimension
      */
     public static Dimension getScreenSize() {
-        //return component.getPreferredSize();
-        return screenSize;
+        return component.getPreferredSize();
+        //return screenSize;
     }
 }

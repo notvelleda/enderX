@@ -1,4 +1,3 @@
-/* -*-mode:java; c-basic-offset:2; -*- */
 /* WeirdX - start point.
  *
  * Copyright (C) 1999-2004 JCraft, Inc.
@@ -392,7 +391,7 @@ public final class WeirdX extends Applet {
                     continue;
                 }
 
-                if (!Acl.check(socket.getInetAddress())) {
+                /*if (!Acl.check(socket.getInetAddress())) {
                     System.err.println("ACL warning: unauthorized access from " +
                         socket.getInetAddress());
                     
@@ -404,12 +403,12 @@ public final class WeirdX extends Applet {
                         socket.close();
                     } catch (Exception e) {};
                     continue;
-                }
+                }*/
 
                 try {
                     socket.setTcpNoDelay(true);
                 } catch (Exception eeee) {
-                    //System.out.println(eeee+" tcpnodelay");
+                    //System.out.println(eeee + " tcpnodelay");
                 }
 
                 in = socket.getInputStream();
@@ -1081,7 +1080,6 @@ public final class WeirdX extends Applet {
             this.weirdx = weirdx;
         }
         public void run() {
-
             try {
                 Class[] params = new Class[1];
                 Object[] args = new Object[1];

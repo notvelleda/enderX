@@ -24,6 +24,7 @@
 package xyz.pugduddly.enderX.ui.platinum;
 
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -31,9 +32,13 @@ import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.Transparency;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.KeyListener;
@@ -43,15 +48,22 @@ import java.awt.event.WindowListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.ComponentEvent;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Set;
 
 import java.lang.management.ManagementFactory;
 import com.sun.management.*;
@@ -85,13 +97,13 @@ public class PlatinumDesktop implements Desktop {
     public static BufferedImage[] menubar;
     public static BufferedImage[] window;
     public static BufferedImage[] windowInactive;
-    private static DateFormat timeFormat = new SimpleDateFormat("K:mm a");
+    private static DateFormat timeFormat = new SimpleDateFormat("h:mm a");
     
     private Menu enderMenu;
     private ArrayList<Menu> menus = new ArrayList<Menu>();
     private WindowManager windowmanager = new WindowManager();
     private Window lastClickedWindow;
-    private BufferedImage image;
+    private VolatileImage image;
     private Graphics2D graphics;
     private boolean isMousePressed = false;
     private boolean isMouseReleased = false;
@@ -106,6 +118,21 @@ public class PlatinumDesktop implements Desktop {
     private boolean prevRootFocused = false;
     
     private boolean use2xUpscaling = false;
+    
+    private final static BasicStroke dashed = new BasicStroke(1.0f,
+        BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1.0f, new float[] { 1.0f }, 0.0f);
+    
+    
+    private static GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    private static GraphicsConfiguration gc = ge.getDefaultScreenDevice().getDefaultConfiguration();
+    private static GraphicsDevice gd = ge.getScreenDevices()[0];
+    
+    private final static BasicStroke solid = new BasicStroke();
+    
+    private HashMap<Window, WindowImageCache> windowBuffer = new HashMap<Window, WindowImageCache>();
+    private HashMap<Window, WindowImageCache> inactiveWindowBuffer = new HashMap<Window, WindowImageCache>();
+    private HashMap<Window, WindowImageCache> rolledWindowBuffer = new HashMap<Window, WindowImageCache>();
+    private HashMap<Window, WindowImageCache> rolledInactiveWindowBuffer = new HashMap<Window, WindowImageCache>();
     
 	public PlatinumDesktop() {
         corners = new BufferedImage[] {
@@ -230,6 +257,16 @@ public class PlatinumDesktop implements Desktop {
                 copyrightLabel.setLocation(350, 148);
                 win.add(copyrightLabel);
                 
+                Set<Thread> threads = Thread.getAllStackTraces().keySet();
+ 
+                for (Thread t : threads) {
+                    if (t.isDaemon()) continue;
+                    String name = t.getName();
+                    Thread.State state = t.getState();
+                    int priority = t.getPriority();
+                    System.out.printf("%-20s \t %s \t %d\n", name, state, priority);
+                }
+                
                 //EnderX.getDesktop().getWindowManager().addWindow(win);
                 win.setVisible(true);
             }
@@ -268,14 +305,15 @@ public class PlatinumDesktop implements Desktop {
                 win.add(beveled);
                 
                 Label wallpaperLabel1 = new Label("Wallpaper:");
+                wallpaperLabel1.setFont(EnderX.getFont("Charcoal", 12));
                 wallpaperLabel1.setLocation(16, 16);
-                wallpaperLabel1.setBold(true);
+                //wallpaperLabel1.setBold(true);
                 win.add(wallpaperLabel1);
                 
                 String wallpaperName = EnderX.getDesktop().getWallpaper().getName();
                 if (wallpaperName.length() == 0) wallpaperName = "None";
                 final Label wallpaperLabel2 = new Label(wallpaperName);
-                wallpaperLabel2.setLocation(86, 16);
+                wallpaperLabel2.setLocation(96, 18);
                 win.add(wallpaperLabel2);
                 
                 Button clearWallpaperButton = new Button("Clear") {
@@ -289,8 +327,9 @@ public class PlatinumDesktop implements Desktop {
                 win.add(clearWallpaperButton);
                 
                 Label resolutionLabel = new Label("Screen Resolution:");
+                resolutionLabel.setFont(EnderX.getFont("Charcoal", 12));
                 resolutionLabel.setLocation(16, 48);
-                resolutionLabel.setBold(true);
+                //resolutionLabel.setBold(true);
                 win.add(resolutionLabel);
                 
                 win.add(this.createResolutionButton(640, 480, 16, 64));
@@ -357,8 +396,9 @@ public class PlatinumDesktop implements Desktop {
                 win.add(customResolutionButton);
                 
                 Label scaleLabel = new Label("2x upscaling (useful for HiDPI displays)");
+                scaleLabel.setFont(EnderX.getFont("Charcoal", 12));
                 scaleLabel.setLocation(16, 96);
-                scaleLabel.setBold(true);
+                //scaleLabel.setBold(true);
                 win.add(scaleLabel);
                 
                 Button scaleOnButton = new Button("On") {
@@ -378,6 +418,30 @@ public class PlatinumDesktop implements Desktop {
                 };
                 scaleOffButton.setLocation(96, 112);
                 win.add(scaleOffButton);
+                
+                Label fullscreenLabel = new Label("Fullscreen Mode");
+                fullscreenLabel.setFont(EnderX.getFont("Charcoal", 12));
+                fullscreenLabel.setLocation(16, 140);
+                //fullscreenLabel.setBold(true);
+                win.add(fullscreenLabel);
+                
+                Button fullscreenOnButton = new Button("On") {
+                    @Override
+                    public void actionPerformed() {
+                        PlatinumDesktop.this.setFullscreen(true);
+                    }
+                };
+                fullscreenOnButton.setLocation(16, 156);
+                win.add(fullscreenOnButton);
+                
+                Button fullscreenOffButton = new Button("Off") {
+                    @Override
+                    public void actionPerformed() {
+                        PlatinumDesktop.this.setFullscreen(false);
+                    }
+                };
+                fullscreenOffButton.setLocation(96, 156);
+                win.add(fullscreenOffButton);
                 
                 //EnderX.getDesktop().getWindowManager().addWindow(win);
                 win.setVisible(true);
@@ -415,6 +479,7 @@ public class PlatinumDesktop implements Desktop {
             if (this.scrHeight == 0) this.scrHeight = 342;
             EnderX.setScreenSize(new Dimension(this.scrWidth, this.scrHeight));
             this.use2xUpscaling(this.config.getBoolean("2xUpscaling"));
+            this.setFullscreen(this.config.getBoolean("FullscreenMode"));
         } catch (Exception e) {
             System.out.println("Failed to load config: " + e);
         }
@@ -449,12 +514,7 @@ public class PlatinumDesktop implements Desktop {
             this.scrWidth = (int) size.getWidth();
             this.scrHeight = (int) size.getHeight();
             
-            this.image = new BufferedImage(this.scrWidth, this.scrHeight, BufferedImage.TYPE_INT_RGB);
-            this.graphics = image.createGraphics();
-            this.graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            
-            this.rootWindow = PFM.getRootWindow(this.scrWidth, this.scrHeight);
+            this.image = null;
             
             this.config.setInteger("DisplayWidth", this.scrWidth);
             this.config.setInteger("DisplayHeight", this.scrHeight);
@@ -465,6 +525,8 @@ public class PlatinumDesktop implements Desktop {
             e.printStackTrace();
         }
         
+        this.allocImage(gc);
+        
         if (this.use2xUpscaling) {
             Dimension d = EnderX.getScreenSize();
             Dimension d2 = new Dimension((int) d.getWidth() * 2, (int) d.getHeight() * 2);
@@ -472,6 +534,12 @@ public class PlatinumDesktop implements Desktop {
             EnderX.getComponent().setPreferredSize(d2);
             Frame frame = ((java.awt.Frame) EnderX.getContainer());
             frame.setSize(d2);
+        } else {
+            Dimension d = EnderX.getScreenSize();
+            EnderX.getComponent().setSize(d);
+            EnderX.getComponent().setPreferredSize(d);
+            Frame frame = ((java.awt.Frame) EnderX.getContainer());
+            frame.setSize(d);
         }
     }
     
@@ -487,6 +555,26 @@ public class PlatinumDesktop implements Desktop {
             EnderX.getComponent().setPreferredSize(d2);
             Frame frame = ((java.awt.Frame) EnderX.getContainer());
             frame.setSize(d2);
+        } else {
+            Dimension d = EnderX.getScreenSize();
+            EnderX.getComponent().setSize(d);
+            EnderX.getComponent().setPreferredSize(d);
+            Frame frame = ((java.awt.Frame) EnderX.getContainer());
+            frame.setSize(d);
+        }
+    }
+    
+    public void setFullscreen(boolean b) {
+        try {
+            this.config.setBoolean("FullscreenMode", b);
+            if (b) {
+                gd.setFullScreenWindow((Frame) EnderX.getContainer());
+            } else {
+                gd.setFullScreenWindow(null);
+            }
+            saveConfig();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
     
@@ -534,16 +622,34 @@ public class PlatinumDesktop implements Desktop {
         
         for (Window window : windowsToClose) {
             this.getWindowManager().removeWindow(window);
+            if (this.windowBuffer.containsKey(window)) {
+                this.windowBuffer.get(window).dispose();
+                this.windowBuffer.remove(window);
+            }
+            if (this.inactiveWindowBuffer.containsKey(window)) {
+                this.inactiveWindowBuffer.get(window).dispose();
+                this.inactiveWindowBuffer.remove(window);
+            }
+            if (this.rolledWindowBuffer.containsKey(window)) {
+                this.rolledWindowBuffer.get(window).dispose();
+                this.rolledWindowBuffer.remove(window);
+            }
+            if (this.rolledInactiveWindowBuffer.containsKey(window)) {
+                this.rolledInactiveWindowBuffer.get(window).dispose();
+                this.rolledInactiveWindowBuffer.remove(window);
+            }
             for (WindowListener l : window.getWindowListeners())
                 l.windowClosed(new WindowEvent((java.awt.Window) EnderX.getContainer(), WindowEvent.WINDOW_CLOSED));
+            System.gc();
         }
     }
     
     public void drawMenubar(Point mouse) {
         this.graphics.drawImage(menubar[0], 0, 0, null);
-        for (int i = 16; i < this.scrWidth - 16; i ++) {
+        /*for (int i = 16; i < this.scrWidth - 16; i ++) {
             this.graphics.drawImage(menubar[1], i, 0, null);
-        }
+        }*/
+        this.graphics.drawImage(menubar[1], 16, 0, this.scrWidth - 32, 20, null);
         this.graphics.drawImage(menubar[3], this.scrWidth - 16, 0, null);
         
         /*if (this.getWindowManager().getTopWindow() != this.prevTopWindow ||
@@ -579,8 +685,19 @@ public class PlatinumDesktop implements Desktop {
         }
     }
     
-    private void allocImage() {
-        this.image = new BufferedImage(this.scrWidth, this.scrHeight, BufferedImage.TYPE_INT_RGB);
+    private void allocImage(GraphicsConfiguration gc) {
+        if (this.graphics != null) {
+            this.graphics.dispose();
+        }
+        
+        if (this.image != null) {
+            this.image.flush();
+        }
+        
+        System.gc();
+        
+        this.image = gc.createCompatibleVolatileImage(this.scrWidth, this.scrHeight, Transparency.OPAQUE);
+        this.image.setAccelerationPriority(1);
         this.graphics = image.createGraphics();
         this.graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -588,45 +705,56 @@ public class PlatinumDesktop implements Desktop {
         this.rootWindow = PFM.getRootWindow(this.scrWidth, this.scrHeight);
     }
     
-    public void paint(Graphics2D g, Point mouse) {
-        boolean isMouseReleased = this.isMouseReleased;
-        if (this.image == null) {
-            this.allocImage();
-        }
-        
-        if (this.use2xUpscaling) mouse = new Point((int) mouse.getX() / 2, (int) mouse.getY() / 2);
-        
-        // Draw background
-        this.drawWallpaper();
-        
-        // do stuff lmao
-        this.graphics.setColor(Color.BLACK);
-        this.graphics.setFont(EnderX.getFont("Charcoal", 12));
-        
+    public void paintAllWindows(Point mouse) {
         this.drawComponents(this.rootWindow);
-        //this.graphics.drawImage(this.rootWindow.getCanvas(), 0, 0, null);
         this.graphics.drawImage(this.rootWindow.getComponentCanvas(), 0, 0, null);
         
         this.renderAllWindows(mouse);
-        
-        this.drawMenubar(mouse);
-        
-        // Draw the obligatory corners
+    }
+    
+    public void drawCorners() {
         this.graphics.drawImage(corners[0], 0, 0, null);
         this.graphics.drawImage(corners[1], this.scrWidth - 5, 0, null);
         this.graphics.drawImage(corners[2], 0, this.scrHeight - 5, null);
         this.graphics.drawImage(corners[3], this.scrWidth - 5, this.scrHeight - 5, null);
+    }
+    
+    public void paint(Graphics2D g, Point mouse) {
+        boolean isMouseReleased = this.isMouseReleased;
+        
+        if (this.image == null || this.image.contentsLost() || this.image.validate(gc) == VolatileImage.IMAGE_INCOMPATIBLE) {
+            this.allocImage(gc);
+        }
+        
+        if (this.use2xUpscaling) mouse = new Point((int) mouse.getX() / 2, (int) mouse.getY() / 2);
+        
+        this.renderContent(mouse);
         
         if (isMouseReleased == this.isMouseReleased && this.isMouseReleased == true)
             this.isMouseReleased = false;
         
+        this.drawBuffer(g);
+        
+        this.prevTopWindow = this.getWindowManager().getTopWindow();
+        this.prevRootFocused = this.rootWindowFocused;
+    }
+    
+    private void drawBuffer(Graphics2D g) {
         if (this.use2xUpscaling)
             g.drawImage(this.image, 0, 0, this.scrWidth * 2, this.scrHeight * 2, null);
         else
             g.drawImage(this.image, 0, 0, null);
+    }
+    
+    private void renderContent(Point mouse) {
+        this.drawWallpaper();
         
-        this.prevTopWindow = this.getWindowManager().getTopWindow();
-        this.prevRootFocused = this.rootWindowFocused;
+        this.graphics.setColor(Color.BLACK);
+        this.graphics.setFont(EnderX.getFont("Charcoal", 12));
+        
+        this.paintAllWindows(mouse);
+        this.drawMenubar(mouse);
+        this.drawCorners();
     }
     
     private void updateMenus() {
@@ -645,7 +773,7 @@ public class PlatinumDesktop implements Desktop {
     }
     
     private void invertRect(int x, int y, int w, int h) {
-        for (int i = x; i < x + w; i ++) {
+        /*for (int i = x; i < x + w; i ++) {
             for (int j = y; j < y + h; j ++) {
                 if ((i > x && i <= x + w - 2 && j > y && j <= y + h - 2) || i < 0 || j < 0 || i >= this.scrWidth || j >= this.scrHeight) continue;
                 int rgb = this.image.getRGB(i, j);
@@ -657,7 +785,13 @@ public class PlatinumDesktop implements Desktop {
                 rgb = (rgb << 8) + b;
                 this.image.setRGB(i, j, rgb);
             }
-        }
+        }*/
+        this.graphics.setPaint(Color.black);
+        this.graphics.setStroke(dashed);
+        this.graphics.draw(new Rectangle2D.Double(x, y, w, h));
+        this.graphics.draw(new Rectangle2D.Double(x + 1, y + 1, w - 2, h - 2));
+        this.graphics.draw(new Rectangle2D.Double(x - 1, y - 1, w + 2, h + 2));
+        this.graphics.setStroke(solid);
     }
     
     private void drawWindow(Graphics2D g, Window win, Point mouse) {
@@ -665,32 +799,70 @@ public class PlatinumDesktop implements Desktop {
         int y = (int) win.getPosition().getY();
         int width = (int) win.getSize().getWidth() + 2;
         int height = (int) win.getSize().getHeight();
-        String title = win.getTitle();
-        int titleWidth = 5 + g.getFontMetrics().stringWidth(title) + 5;
         int numLeftButtons = (win.canClose() ? 1 : 0);
         int numRightButtons = (win.canResize() ? 1 : 0) + (win.canRoll() ? 1 : 0);
-        if (win.isRolled())
-            g.drawImage(window[6], x, y, null);
-        else
-            g.drawImage(window[0], x, y, null);
-        for (int i = 0; i < width; i ++) {
-            if (win.isRolled())
-                g.drawImage(window[7], x + 5 + i, y, null);
-            else
-                g.drawImage(window[1], x + 5 + i, y, null);
-            if (i == numLeftButtons * 16 || i == width / 2 + titleWidth / 2)
-                g.drawImage(window[2], x + 5 + i, y, null);
-            else if ((i > numLeftButtons * 16 && i < width / 2 - titleWidth / 2) || (i > width / 2 + titleWidth / 2 && i < width - numRightButtons * 16 - 1))
-                g.drawImage(window[3], x + 5 + i, y, null);
-            else if (i == width / 2 - titleWidth / 2 || i == width - numRightButtons * 16 - 1)
-                g.drawImage(window[4], x + 5 + i, y, null);
+        
+        WindowImageCache cache;
+        if (win.isRolled()) {
+            if (this.rolledWindowBuffer.containsKey(win)) {
+                cache = this.rolledWindowBuffer.get(win);
+            } else {
+                cache = new WindowImageCache(win);
+                this.rolledWindowBuffer.put(win, cache);
+            }
+        } else {
+            if (this.windowBuffer.containsKey(win)) {
+                cache = this.windowBuffer.get(win);
+            } else {
+                cache = new WindowImageCache(win);
+                this.windowBuffer.put(win, cache);
+            }
         }
-        if (win.isRolled())
-            g.drawImage(window[8], x + 5 + width, y, null);
-        else
-            g.drawImage(window[5], x + 5 + width, y, null);
-        g.setColor(Color.BLACK);
-        g.drawString(title, x + 5 + width / 2 - titleWidth / 2 + 5, y + 15);
+        
+        if ((win.isRolled() && cache.checkImage(gc, width + 11, 23)) || (!win.isRolled() && cache.checkImage(gc, width + 11, height + 29)) || cache.checkAgainstWindow(win)) {
+            String title = win.getTitle();
+            int titleWidth = 5 + g.getFontMetrics().stringWidth(title) + 5;
+            Graphics2D g2 = cache.image.createGraphics();
+            g2.setFont(EnderX.getFont("Charcoal", 12));
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            
+            if (win.isRolled())
+                g2.drawImage(window[6], 0, 0, null);
+            else
+                g2.drawImage(window[0], 0, 0, null);
+            for (int i = 0; i < width; i ++) {
+                if (win.isRolled())
+                    g2.drawImage(window[7], 5 + i, 0, null);
+                else
+                    g2.drawImage(window[1], 5 + i, 0, null);
+                if (i == numLeftButtons * 16 || i == width / 2 + titleWidth / 2)
+                    g2.drawImage(window[2], 5 + i, 0, null);
+                else if ((i > numLeftButtons * 16 && i < width / 2 - titleWidth / 2) || (i > width / 2 + titleWidth / 2 && i < width - numRightButtons * 16 - 1))
+                    g2.drawImage(window[3], 5 + i, 0, null);
+                else if (i == width / 2 - titleWidth / 2 || i == width - numRightButtons * 16 - 1)
+                    g2.drawImage(window[4], 5 + i, 0, null);
+            }
+            if (win.isRolled())
+                g2.drawImage(window[8], 5 + width, 0, null);
+            else
+                g2.drawImage(window[5], 5 + width, 0, null);
+            g2.setColor(Color.BLACK);
+            g2.drawString(title, 5 + width / 2 - titleWidth / 2 + 5, 15);
+            if (!win.isRolled()) {
+                for (int i = 0; i < height; i ++) {
+                    g2.drawImage(window[15], 0, 22 + i, null);
+                    g2.drawImage(window[16], 4 + width, 22 + i, null);
+                }
+                g2.drawImage(window[17], 0, 22 + height, null);
+                for (int i = 0; i < width - 2; i ++) {
+                    g2.drawImage(window[18], 6 + i, 22 + height, null);
+                }
+                g2.drawImage(window[19], 4 + width, 22 + height, null);
+            }
+            g2.dispose();
+        }
+        g.drawImage(cache.image, x, y, null);
         if (win.canClose()) {
             int buttonX = x + 4;
             int buttonY = y + 4;
@@ -747,18 +919,8 @@ public class PlatinumDesktop implements Desktop {
         if (win.isRolled()) return;
         g.drawImage(win.getCanvas(), x + 6, y + 22, null);
         g.drawImage(win.getComponentCanvas(), x + 6, y + 22, null);
-        for (int i = 0; i < height; i ++) {
-            g.drawImage(window[15], x, y + 22 + i, null);
-            g.drawImage(window[16], x + 4 + width, y + 22 + i, null);
-        }
-        g.drawImage(window[17], x, y + 22 + height, null);
-        for (int i = 0; i < width - 2; i ++) {
-            g.drawImage(window[18], x + 6 + i, y + 22 + height, null);
-        }
         if (win.canResize())
             g.drawImage(window[20], x + width - 11, y + height + 7, null);
-        else
-            g.drawImage(window[19], x + 4 + width, y + 22 + height, null);
     }
     
     private void drawInactiveWindow(Graphics2D g, Window win, Point mouse) {
@@ -766,46 +928,74 @@ public class PlatinumDesktop implements Desktop {
         int y = (int) win.getPosition().getY();
         int width = (int) win.getSize().getWidth() + 2;
         int height = (int) win.getSize().getHeight();
-        String title = win.getTitle();
-        int titleWidth = 5 + g.getFontMetrics().stringWidth(title) + 5;
-        if (win.isRolled())
-            g.drawImage(windowInactive[3], x, y, null);
-        else
-            g.drawImage(windowInactive[0], x, y, null);
-        for (int i = 0; i < width - 16; i ++) {
-            if (win.isRolled())
-                g.drawImage(windowInactive[4], x + 5 + i, y, null);
-            else
-                g.drawImage(windowInactive[1], x + 5 + i, y, null);
+        
+        WindowImageCache cache;
+        if (win.isRolled()) {
+            if (this.rolledInactiveWindowBuffer.containsKey(win)) {
+                cache = this.rolledInactiveWindowBuffer.get(win);
+            } else {
+                cache = new WindowImageCache(win);
+                this.rolledInactiveWindowBuffer.put(win, cache);
+            }
+        } else {
+            if (this.inactiveWindowBuffer.containsKey(win)) {
+                cache = this.inactiveWindowBuffer.get(win);
+            } else {
+                cache = new WindowImageCache(win);
+                this.inactiveWindowBuffer.put(win, cache);
+            }
         }
-        if (win.isRolled())
-            g.drawImage(windowInactive[5], x + width - 11, y, null);
-        else
-            g.drawImage(windowInactive[2], x + width - 11, y, null);
-        g.setColor(new Color(0x737373));
-        g.drawString(title, x + 5 + width / 2 - titleWidth / 2 + 5, y + 15);
+        
+        if ((win.isRolled() && cache.checkImage(gc, width + 11, 23)) || (!win.isRolled() && cache.checkImage(gc, width + 11, height + 29)) || cache.checkAgainstWindow(win)) {
+            String title = win.getTitle();
+            int titleWidth = 5 + g.getFontMetrics().stringWidth(title) + 5;
+            Graphics2D g2 = cache.image.createGraphics();
+            g2.setFont(EnderX.getFont("Charcoal", 12));
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            
+            if (win.isRolled())
+                g2.drawImage(windowInactive[3], 0, 0, null);
+            else
+                g2.drawImage(windowInactive[0], 0, 0, null);
+            for (int i = 0; i < width - 16; i ++) {
+                if (win.isRolled())
+                    g2.drawImage(windowInactive[4], 5 + i, 0, null);
+                else
+                    g2.drawImage(windowInactive[1], 5 + i, 0, null);
+            }
+            if (win.isRolled())
+                g2.drawImage(windowInactive[5], width - 11, 0, null);
+            else
+                g2.drawImage(windowInactive[2], width - 11, 0, null);
+            g2.setColor(new Color(0x737373));
+            g2.drawString(title, 5 + width / 2 - titleWidth / 2 + 5, 15);
+            if (!win.isRolled()) {
+                for (int i = 0; i < height; i ++) {
+                    g2.drawImage(windowInactive[6], 0, 22 + i, null);
+                    g2.drawImage(windowInactive[7], 4 + width, 22 + i, null);
+                }
+                g2.drawImage(windowInactive[8], 0, 22 + height, null);
+                for (int i = 0; i < width - 2; i ++) {
+                    g2.drawImage(windowInactive[9], 6 + i, 22 + height, null);
+                }
+                g2.drawImage(windowInactive[10], 4 + width, 22 + height, null);
+                g2.dispose();
+            }
+        }
+        g.drawImage(cache.image, x, y, null);
         if (win.isRolled()) return;
         g.drawImage(win.getCanvas(), x + 6, y + 22, null);
         g.drawImage(win.getComponentCanvas(), x + 6, y + 22, null);
-        for (int i = 0; i < height; i ++) {
-            g.drawImage(windowInactive[6], x, y + 22 + i, null);
-            g.drawImage(windowInactive[7], x + 4 + width, y + 22 + i, null);
-        }
-        g.drawImage(windowInactive[8], x, y + 22 + height, null);
-        for (int i = 0; i < width - 2; i ++) {
-            g.drawImage(windowInactive[9], x + 6 + i, y + 22 + height, null);
-        }
         if (win.canResize())
             g.drawImage(windowInactive[11], x + width - 11, y + height + 7, null);
-        else
-            g.drawImage(windowInactive[10], x + 4 + width, y + 22 + height, null);
     }
     
     private void drawComponents(Window window) {
-        BufferedImage bi = window.getComponentCanvas();
-        Graphics2D g = bi.createGraphics();
+        Image i = window.getComponentCanvas();
+        Graphics2D g = (Graphics2D) i.getGraphics();
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
-        g.fillRect(0, 0, bi.getWidth(null), bi.getHeight(null));
+        g.fillRect(0, 0, i.getWidth(null), i.getHeight(null));
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER));
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -1455,3 +1645,64 @@ public class PlatinumDesktop implements Desktop {
     }
 }
 
+// I tried this with VolatileImages - didn't work :(
+class WindowImageCache {
+    public BufferedImage image;
+    public Dimension size;
+    public String title;
+    public boolean shouldRecreate = false;
+    
+    public WindowImageCache(Window win) {
+        this.size = win.getSize();
+        this.title = win.getTitle();
+    }
+    
+    public boolean checkImage(GraphicsConfiguration gc, int w, int h) {
+        /*GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsConfiguration gc = ge.getDefaultScreenDevice().getDefaultConfiguration();*/
+        if (shouldRecreate || this.image == null/* || this.image.contentsLost() || this.image.validate(gc) == VolatileImage.IMAGE_INCOMPATIBLE*/) {
+            shouldRecreate = false;
+            
+            if (this.image != null) {
+                this.image.flush();
+            }
+            
+            System.gc();
+            
+            this.image = gc.createCompatibleImage(w, h, Transparency.TRANSLUCENT);
+            this.image.setAccelerationPriority(1);
+            
+            Graphics2D g = this.image.createGraphics();
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
+            g.fillRect(0, 0, (int) size.getWidth(), (int) size.getHeight());
+            g.dispose();
+            
+            return true;
+        }
+        return false;
+    }
+    
+    public boolean checkAgainstWindow(Window win) {
+        boolean ret = false;
+        Dimension d = win.getSize();
+        
+        if ((int) this.size.getWidth() != (int) d.getWidth() || (int) this.size.getHeight() != (int) d.getHeight()) {
+            this.size = d;
+            shouldRecreate = true;
+            ret = true;
+        }
+        
+        if (!win.getTitle().equals(this.title)) {
+            this.title = win.getTitle();
+            ret = true;
+        }
+        
+        return ret;
+    }
+    
+    public void dispose() {
+        if (this.image != null) {
+            this.image.flush();
+        }
+    }
+}

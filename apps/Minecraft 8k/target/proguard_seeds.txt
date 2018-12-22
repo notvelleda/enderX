@@ -1,0 +1,2 @@
+mc8k.MC
+mc8k.MC: void main()

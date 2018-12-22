@@ -28,9 +28,13 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.GraphicsConfiguration;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Transparency;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.KeyListener;
@@ -40,6 +44,7 @@ import java.awt.event.WindowListener;
 import java.awt.event.ComponentListener;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -56,7 +61,7 @@ public class Window {
     private Point position;
     private Point originalPosition;
     private BufferedImage canvas;
-    private BufferedImage cptCanvas;
+    private VolatileImage cptCanvas;
     private boolean close = true;
     private boolean resize = true;
     private boolean roll = true;
@@ -87,6 +92,23 @@ public class Window {
         EnderX.getDesktop().getWindowManager().addWindow(this);
     }
     
+    private void verifyCptCanvas(boolean recreate) {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsConfiguration gc = ge.getDefaultScreenDevice().getDefaultConfiguration();
+        if (this.cptCanvas == null || this.cptCanvas.contentsLost() || this.cptCanvas.validate(gc) == VolatileImage.IMAGE_INCOMPATIBLE || recreate) {
+            if (this.cptCanvas != null) {
+                this.cptCanvas.flush();
+            }
+            this.cptCanvas = gc.createCompatibleVolatileImage((int) size.getWidth(), (int) size.getHeight(), Transparency.TRANSLUCENT);
+            this.cptCanvas.setAccelerationPriority(1);
+            Graphics2D g = this.cptCanvas.createGraphics();
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
+            g.fillRect(0, 0, (int) size.getWidth(), (int) size.getHeight());
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER));
+            g.dispose();
+        }
+    }
+    
     /**
      * Sets the size of a Window.
      * @param size The size.
@@ -94,8 +116,10 @@ public class Window {
      */
     public Window setSize(Dimension size) {
         this.size = size;
-        BufferedImage img = new BufferedImage((int) size.getWidth(), (int) size.getHeight(), BufferedImage.TYPE_INT_RGB);
-        BufferedImage img2 = new BufferedImage((int) size.getWidth(), (int) size.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsConfiguration gc = ge.getDefaultScreenDevice().getDefaultConfiguration();
+        BufferedImage img = gc.createCompatibleImage((int) size.getWidth(), (int) size.getHeight(), Transparency.OPAQUE);
+        img.setAccelerationPriority(1);
         if (this.canvas == null) {
             Graphics2D g = img.createGraphics();
             g.setPaint(Color.WHITE);
@@ -110,12 +134,7 @@ public class Window {
             g.dispose();
             this.canvas = img;
         }
-        Graphics2D g = img2.createGraphics();
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
-        g.fillRect(0, 0, img2.getWidth(null), img2.getHeight(null));
-        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER));
-        g.dispose();
-        this.cptCanvas = img2;
+        verifyCptCanvas(true);
         return this;
     }
     
@@ -279,18 +298,19 @@ public class Window {
     }
     
     /**
-     * Get the BufferedImage that {@link #getGraphics()} is drawing to.
-     * @return the BufferedImage.
+     * Get the Image that {@link #getGraphics()} is drawing to.
+     * @return the Image.
      */
-    public BufferedImage getCanvas() {
+    public Image getCanvas() {
         return this.canvas;
     }
     
     /**
-     * Get the BufferedImage that the current Desktop should be drawing Components to.
-     * @return the BufferedImage.
+     * Get the Image that the current Desktop should be drawing Components to.
+     * @return the Image.
      */
-    public BufferedImage getComponentCanvas() {
+    public Image getComponentCanvas() {
+        verifyCptCanvas(false);
         return this.cptCanvas;
     }
     
@@ -774,5 +794,15 @@ public class Window {
         this.components.clear();
         return this;
     }
+    
+    /**
+     * Called when the window gains focus.
+     */
+    public void addFocus() {}
+    
+    /**
+     * Called when the window removes focus.
+     */
+    public void removeFocus() {}
 }
 

@@ -516,9 +516,9 @@ implements DDXWindow, MouseListener, MouseMotionListener, KeyListener {
 
     public void mouseEntered(MouseEvent e) {
         if (window == null) return;
-        if (window.getFrame() != null) {
+        /*if (window.getFrame() != null) {
             xyz.pugduddly.enderX.ui.Window frame = window.getFrame();
-            /*if (frame instanceof java.awt.Frame && frame == e.getSource()) {
+            if (frame instanceof java.awt.Frame && frame == e.getSource()) {
                 try {
                     if(window.isRealized()) {
                         Window.setInputFocus(window.client, window.id, 1, (int) System.currentTimeMillis(), false);
@@ -528,8 +528,8 @@ implements DDXWindow, MouseListener, MouseMotionListener, KeyListener {
                     ee.printStackTrace();
                 }
                 return;
-            }*/
-        }
+            }
+        }*/
 
         String str = CopyPaste.getString();
         if (!CopyPaste.isOwner() && str != null) {
@@ -571,8 +571,8 @@ implements DDXWindow, MouseListener, MouseMotionListener, KeyListener {
             return;
         }
 
-        int x = e.getX()/* + window.x*/;
-        int y = e.getY()/* + window.y*/;
+        int x = e.getX();
+        int y = e.getY();
 
         Window.sprite.hot.x = x;
         Window.sprite.hot.y = y;
@@ -606,8 +606,8 @@ implements DDXWindow, MouseListener, MouseMotionListener, KeyListener {
             return;
         }
 
-        int x = e.getX()/* + window.x*/;
-        int y = e.getY()/* + window.y*/;
+        int x = e.getX();
+        int y = e.getY();
 
         Window.sprite.hot.x = x;
         Window.sprite.hot.y = y;

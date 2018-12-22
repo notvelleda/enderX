@@ -433,7 +433,7 @@ class Window extends Drawable {
                     parent.borderWidth);
 
                 if (frame instanceof xyz.pugduddly.enderX.ui.Window) {
-                    addWindowListener((xyz.pugduddly.enderX.ui.Window) frame);
+                    addWindowListener((xyz.pugduddly.enderX.ui.Window) frame, this);
                     addComponentListener((xyz.pugduddly.enderX.ui.Window) frame);
                 }
             } else {
@@ -1137,6 +1137,7 @@ class Window extends Drawable {
     }
 
     private void deleteEvent(boolean freeResources) throws IOException {
+        //System.out.println("deleteEvent(" + freeResources + ")");
         Grab passive;
         if (Window.grab != null && Window.grab.window == this) {
             Window.grab.deactivatePointerGrab();
@@ -1149,6 +1150,7 @@ class Window extends Drawable {
                     focus.win = 0;
                     focus.window = null;
                     focus.traceGood = 0;
+                    //System.out.println("deleteEvent(): focus.revert == RevertToNone");
                     break;
                 case RevertToParent:
                     Window win = this;
@@ -1163,12 +1165,14 @@ class Window extends Drawable {
                     focus.win = p;
                     focus.window = win;
                     focus.revert = RevertToNone;
+                    //System.out.println("deleteEvent(): focus.revert == RevertToParent");
                     break;
                 case RevertToPointerRoot:
                     doFocusEvents(null, id, PointerRootWin, focusEventMode);
                     focus.win = PointerRootWin;
                     focus.window = null;
                     focus.traceGood = 0;
+                    //System.out.println("deleteEvent(): focus.revert == RevertToPointerRoot");
                     break;
             }
         }
@@ -2489,6 +2493,7 @@ class Window extends Drawable {
         int focusId, int revertTo,
         int time, boolean followOk)
     throws IOException {
+        //System.out.println("setInputFocus()");
         if ((revertTo != RevertToParent) &&
             (revertTo != RevertToPointerRoot) &&
             (revertTo != RevertToNone)) {
@@ -2519,6 +2524,7 @@ class Window extends Drawable {
         focus.revert = revertTo;
         focus.win = focusWin;
         focus.window = win;
+        //System.out.println("setInputFocus(): focus.win = " + focus.win);
 
         if ((focusWin == 0) || (focusWin == 1)) {
             focus.traceGood = 0;
@@ -3609,7 +3615,7 @@ class Window extends Drawable {
                 frame.setSize(this.width + this.borderWidth * 2, this.height + this.borderWidth * 2);
 
                 if (frame instanceof xyz.pugduddly.enderX.ui.Window) {
-                    addWindowListener((xyz.pugduddly.enderX.ui.Window) frame);
+                    addWindowListener((xyz.pugduddly.enderX.ui.Window) frame, this);
                     addComponentListener((xyz.pugduddly.enderX.ui.Window) frame);
                 }
             } else {
@@ -3962,6 +3968,7 @@ class Window extends Drawable {
         }
         return false;
     }
+    
     Window commonAncestor(Window w) {
         for (w = w.parent; w != null; w = w.parent) {
             if (w.isParent(this)) return w;
@@ -3971,7 +3978,7 @@ class Window extends Drawable {
 
     private static void doFocusEvents(Client c, int fromWin, int toWin, int mode)
     throws IOException {
-        int out, in ;
+        int out, in;
 
         if (fromWin == toWin) return;
 
@@ -4173,10 +4180,25 @@ class Window extends Drawable {
         }
     }
 
-    private void addWindowListener(xyz.pugduddly.enderX.ui.Window foo) {
-        final xyz.pugduddly.enderX.ui.Window frame = foo;
+    private void addWindowListener(xyz.pugduddly.enderX.ui.Window _frame, Window _win) {
+        final xyz.pugduddly.enderX.ui.Window frame = _frame;
+        final Window win = _win;
         frame.addWindowListener(
             new java.awt.event.WindowAdapter() {
+                public void windowActivated(java.awt.event.WindowEvent e) {
+                    System.out.println("Window " + frame + " activated");
+                    int oldFocus = focus.win;
+                    try {
+                        if(win.isRealized()) {
+                            Window.setInputFocus(win.client, win.id, 1, (int) System.currentTimeMillis(), true);
+                        }
+                    } catch (Exception ee) {
+                        ee.printStackTrace();
+                    }
+                }
+                public void windowDeactivated(java.awt.event.WindowEvent e) {
+                    System.out.println("Window " + frame + " deactivated");
+                }
                 public void windowClosed(java.awt.event.WindowEvent e) {}
                 public void windowClosing(java.awt.event.WindowEvent e) {
                     int message_type = Atom.find("WM_PROTOCOLS");

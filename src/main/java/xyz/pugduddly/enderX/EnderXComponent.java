@@ -28,21 +28,25 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.GraphicsConfiguration;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
+import java.awt.Transparency;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 
 import xyz.pugduddly.enderX.ui.Desktop;
 import xyz.pugduddly.enderX.ui.platinum.PlatinumDesktop;
 
 import com.jcraft.weirdx.WeirdX;
 
-public class EnderXComponent extends JComponent implements KeyListener, MouseListener, MouseMotionListener {
+public class EnderXComponent extends JComponent implements KeyListener, MouseListener, MouseMotionListener, Runnable {
     public boolean shouldInitialize = true;
     public static EnderXComponent inst;
     
@@ -60,11 +64,26 @@ public class EnderXComponent extends JComponent implements KeyListener, MouseLis
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         Cursor c = toolkit.createCustomCursor(EnderX.loadImage(getClass().getResourceAsStream("/pointer.png")), new Point(0, 0), "default");
         setCursor(c);
+        
+        Thread t = new Thread(this);
+        t.setName("Component Repainter");
+        t.start();
     }
     
-    public void paintComponent(Graphics g2) {
+    public void update(Graphics g){
+        paint(g);
+    }
+    
+    public void run() {
+        while (true) {
+            long t = System.currentTimeMillis();
+            this.repaint();
+            this.fpsDelay(t);
+        }
+    }
+    
+    public void paint(Graphics g2) {
         Graphics2D g = (Graphics2D) g2;
-        long t = System.currentTimeMillis();
         
         Point p = java.awt.MouseInfo.getPointerInfo().getLocation();
         Point p2 = this.getLocationOnScreen();
@@ -76,7 +95,7 @@ public class EnderXComponent extends JComponent implements KeyListener, MouseLis
             EnderX.loadBuiltinFonts();
             EnderX.getHomeDirectory(); // Make sure directory exists
             this.desktop = new PlatinumDesktop();
-            new Thread() {
+            new Thread("WeirdX") {
                 @Override
                 public void run() {
                     WeirdX.init_enderX(800, 600, EnderX.getContainer());
@@ -86,13 +105,16 @@ public class EnderXComponent extends JComponent implements KeyListener, MouseLis
         } else {
             this.desktop.paint(g, mp);
         }
-        
-        this.fpsDelay(t);
-        this.repaint();
     }
     
     private void fpsDelay(long lastTime) {
-        while (System.currentTimeMillis() - lastTime < 1000 / 60);
+        try {
+            while (System.currentTimeMillis() - lastTime < 1000 / 60) {
+                Thread.sleep(1);
+            }
+        } catch (InterruptedException e) {
+            fpsDelay(lastTime);
+        }
     }
     
     public void keyTyped(KeyEvent e) {
@@ -128,6 +150,13 @@ public class EnderXComponent extends JComponent implements KeyListener, MouseLis
     
     public void mouseDragged(MouseEvent e) {
         this.desktop.mouseDragged(e);
+    }
+    
+    public void setScreenSize(Dimension size) {
+        this.setSize(size);
+        this.setPreferredSize(size);
+        this.setMinimumSize(size);
+        this.setMaximumSize(size);
     }
 }
 

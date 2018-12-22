@@ -21,4 +21,4 @@ enderX uses a modified version of [WeirdX](http://www.jcraft.com/weirdx/) 1.0.32
 By default, it uses display `:2`.
 
 ## API Documentation
-Click [here](https://rawgit.com/Pugduddly/enderX/master/target/site/apidocs/index.html) to view the API documentation.
+Click [here](https://raw.githack.com/Pugduddly/enderX/master/target/site/apidocs/index.html) to view the API documentation.
